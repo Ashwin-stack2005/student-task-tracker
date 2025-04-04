@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naan Mudhalavan Completion List</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .completed-row {
+            background-color: #eaefea; /* light green */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        input, button {
+            padding: 8px;
+            font-size: 16px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #liveClock {
+            font-size: 16px;
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PEER-LEARNING TEAM development</h1>
+            <div id="liveClock"></div>
+        </div>
+
+        <h2>Student Task Completion Tracker</h2>
+        <p><b>Remaining Students:</b> <span id="remainingCount"></span></p>
+
+        <div style="margin-bottom: 20px;">
+            <label for="studentNameInput">Enter Your Name: </label>
+            <input type="text" id="studentNameInput" placeholder="Your full name">
+            <button onclick="markByName()" style="background-color: green; color: white; margin-left: 10px;">Mark as Complete</button>
+            <button onclick="showDeleteAll()" style="background-color: orange; color: white; margin-left: 10px;">Admin Login</button>
+            <button id="deleteAllBtn" onclick="deleteAllStudents()" style="background-color: red; color: white; margin-left: 10px; display: none;">Delete All</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody id="studentList">
+                <!-- Student rows will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const TOTAL_STUDENTS = 67;
+
+        function updateRemainingCount() {
+            const students = JSON.parse(localStorage.getItem("studentList")) || [];
+            const completedCount = students.filter(s => s.status === "Completed").length;
+            const remainingCount = TOTAL_STUDENTS - completedCount;
+            document.getElementById("remainingCount").textContent = remainingCount >= 0 ? remainingCount : 0;
+        }
+
+        function generateStudentTable() {
+            const students = JSON.parse(localStorage.getItem("studentList")) || [];
+            const tbody = document.getElementById("studentList");
+
+            tbody.innerHTML = students.map(student => `
+                <tr class="${student.status === 'Completed' ? 'completed-row' : ''}">
+                    <td>${student.name}</td>
+                    <td>${student.status}</td>
+                    <td>${student.time || '-'}</td>
+                </tr>
+            `).join("");
+
+            updateRemainingCount();
+        }
+
+        function markByName() {
+            const inputName = document.getElementById("studentNameInput").value.trim();
+            if (!inputName) {
+                alert("Please enter your name.");
+                return;
+            }
+
+            const now = new Date();
+            const formattedTime = now.toLocaleTimeString(); // Show only time
+
+            let students = JSON.parse(localStorage.getItem("studentList")) || [];
+            let found = false;
+
+            students = students.map(student => {
+                if (student.name.toLowerCase() === inputName.toLowerCase()) {
+                    student.status = "Completed";
+                    student.time = formattedTime;
+                    found = true;
+                }
+                return student;
+            });
+
+            if (!found) {
+                students.push({ name: inputName, status: "Completed", time: formattedTime });
+            }
+
+            localStorage.setItem("studentList", JSON.stringify(students));
+            document.getElementById("studentNameInput").value = "";
+            generateStudentTable();
+        }
+
+        function showDeleteAll() {
+            const secretKey = "admin123";
+            const inputKey = prompt("Enter admin key to access delete option:");
+            if (inputKey === secretKey) {
+                document.getElementById("deleteAllBtn").style.display = "inline-block";
+                alert("Access granted! You can now delete all data.");
+            } else {
+                alert("Access denied! Incorrect key.");
+            }
+        }
+
+        function deleteAllStudents() {
+            const secretKey = "admin123";
+            const inputKey = prompt("Re-enter admin key to confirm delete:");
+            if (inputKey === secretKey) {
+                if (confirm("Are you sure you want to delete all student data?")) {
+                    localStorage.removeItem("studentList");
+                    generateStudentTable();
+                    alert("All student data has been deleted.");
+                }
+            } else {
+                alert("Access denied! Incorrect key.");
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById("liveClock").textContent = now.toLocaleTimeString();
+        }
+
+        // Initialize
+        window.onload = () => {
+            generateStudentTable();
+            updateClock();
+            setInterval(updateClock, 1000);
+        };
+    </script>
+</body>
+</html>
